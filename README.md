@@ -1,10 +1,10 @@
-# ByteViper NDS 🐍
+# ByteViper NDS 
 
 ByteViper is a lightweight, Python-based Network Detection System (NDS). Designed as a progressive, multi-stage cybersecurity portfolio project, it aims to evolve from a simple packet capture engine into a robust, feature-rich network traffic analysis tool.
 
 > **Status:** Stage 1 (Core Packet Capture Engine) Complete.
 
-## 🚀 Features (Stage 1)
+##  Features (Stage 1)
 
 *   **Live Packet Capture:** Asynchronously capture packets on a selected network interface without dropping them.
 *   **Interface Detection:** Automatically detects available system network interfaces.
@@ -12,12 +12,12 @@ ByteViper is a lightweight, Python-based Network Detection System (NDS). Designe
 *   **Live Statistics:** View a live packet counter while the capture is running.
 *   **Modular Architecture:** Cleanly separated core engine and CLI for future scalability.
 
-## 🛠️ Prerequisites
+##  Prerequisites
 
 *   Python 3.8+
 *   `sudo` privileges (required to interact with raw network sockets for packet capture)
 
-## 📦 Installation
+##  Installation
 
 1.  Clone the repository:
     ```bash
@@ -36,7 +36,7 @@ ByteViper is a lightweight, Python-based Network Detection System (NDS). Designe
     pip install -r requirements.txt
     ```
 
-## 🎮 Usage
+##  Usage
 
 Run the main application script with elevated privileges:
 
