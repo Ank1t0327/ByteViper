@@ -1,1 +1,63 @@
-# ByteViper
+# ByteViper NDS 🐍
+
+ByteViper is a lightweight, Python-based Network Detection System (NDS). Designed as a progressive, multi-stage cybersecurity portfolio project, it aims to evolve from a simple packet capture engine into a robust, feature-rich network traffic analysis tool.
+
+> **Status:** Stage 1 (Core Packet Capture Engine) Complete.
+
+## 🚀 Features (Stage 1)
+
+*   **Live Packet Capture:** Asynchronously capture packets on a selected network interface without dropping them.
+*   **Interface Detection:** Automatically detects available system network interfaces.
+*   **Threaded Engine:** Core packet sniffing runs in a background thread, keeping the interactive CLI fully responsive.
+*   **Live Statistics:** View a live packet counter while the capture is running.
+*   **Modular Architecture:** Cleanly separated core engine and CLI for future scalability.
+
+## 🛠️ Prerequisites
+
+*   Python 3.8+
+*   `sudo` privileges (required to interact with raw network sockets for packet capture)
+
+## 📦 Installation
+
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/Ank1t0327/ByteViper.git
+    cd ByteViper
+    ```
+
+2.  Create and activate a virtual environment (recommended):
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+3.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+## 🎮 Usage
+
+Run the main application script with elevated privileges:
+
+```bash
+sudo python3 src/main.py
+```
+
+### CLI Commands
+Once inside the ByteViper interactive shell, you can use the following commands:
+*   `start` - Begins packet capture on the selected interface.
+*   `stat`  - Displays the current number of captured packets.
+*   `stop`  - Halts the packet capture process.
+*   `exit`  - Safely stops any running captures and exits the application.
+
+## 🗺️ Project Roadmap
+
+This project is built in iterative stages to add real capabilities step-by-step:
+
+- [x] **Stage 1: Project Foundation & Network Packet Capture** - Core engine built with Python and Scapy.
+- [ ] **Stage 2:** *Pending* (Focusing on packet parsing and analysis)
+- [ ] **Stage 3:** *Pending* (Focusing on detection rules and alerts)
+
+---
+*Created as a portfolio-level cybersecurity project.*
