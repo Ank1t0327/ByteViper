@@ -51,7 +51,7 @@ Once inside the ByteViper interactive shell, you can use the following commands:
 *   `stop`  - Halts the packet capture process.
 *   `exit`  - Safely stops any running captures and exits the application.
 
-## 🗺️ Project Roadmap
+##  Project Roadmap
 
 This project is built in iterative stages to add real capabilities step-by-step:
 
