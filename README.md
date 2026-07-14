@@ -62,4 +62,3 @@ This project is built in iterative stages to add real capabilities step-by-step:
 - [ ] **Detection Rules and Alerts** - *Pending* (Focusing on identifying malicious traffic)
 
 ---
-*Created as a portfolio-level cybersecurity project.*
