@@ -1,5 +1,5 @@
 import socket
-from scapy.all import Packet, Ether, IP, IPv6, ARP
+from scapy.all import Packet, Ether, IP, IPv6, ARP, TCP, UDP, ICMP
 
 class PacketParser:
     """
@@ -32,6 +32,14 @@ class PacketParser:
             parsed_data["layers"].append(self._parse_ip(packet[IP]))
         elif packet.haslayer(IPv6):
             parsed_data["layers"].append(self._parse_ipv6(packet[IPv6]))
+
+        # Layer 4
+        if packet.haslayer(TCP):
+            parsed_data["layers"].append(self._parse_tcp(packet[TCP]))
+        elif packet.haslayer(UDP):
+            parsed_data["layers"].append(self._parse_udp(packet[UDP]))
+        elif packet.haslayer(ICMP):
+            parsed_data["layers"].append(self._parse_icmp(packet[ICMP]))
 
         return parsed_data
 
@@ -72,4 +80,32 @@ class PacketParser:
             "next_header": ipv6_layer.nh,
             "hlim": ipv6_layer.hlim,
             "length": ipv6_layer.plen
+        }
+
+    def _parse_tcp(self, tcp_layer) -> dict:
+        return {
+            "layer": "TCP",
+            "src_port": tcp_layer.sport,
+            "dst_port": tcp_layer.dport,
+            "seq": tcp_layer.seq,
+            "ack": tcp_layer.ack,
+            "flags": str(tcp_layer.flags),
+            "window": tcp_layer.window
+        }
+
+    def _parse_udp(self, udp_layer) -> dict:
+        return {
+            "layer": "UDP",
+            "src_port": udp_layer.sport,
+            "dst_port": udp_layer.dport,
+            "length": udp_layer.len
+        }
+
+    def _parse_icmp(self, icmp_layer) -> dict:
+        return {
+            "layer": "ICMP",
+            "type": icmp_layer.type,
+            "code": icmp_layer.code,
+            "id": getattr(icmp_layer, 'id', None),
+            "seq": getattr(icmp_layer, 'seq', None)
         }
