@@ -2,14 +2,16 @@
 
 ByteViper is a lightweight, Python-based Network Detection System (NDS). Designed as a progressive, multi-stage cybersecurity portfolio project, it aims to evolve from a simple packet capture engine into a robust, feature-rich network traffic analysis tool.
 
-> **Status:** Stage 1 (Core Packet Capture Engine) Complete.
+> **Status:** Packet Capture and Protocol Parsing Engine Active.
 
-##  Features (Stage 1)
+##  Features
 
 *   **Live Packet Capture:** Asynchronously capture packets on a selected network interface without dropping them.
+*   **Protocol Parsing Engine:** Decodes Ethernet, ARP, IPv4, IPv6, ICMP, TCP, UDP, DNS, and HTTP packets.
+*   **Header Extraction:** Extracts critical fields like MAC/IP addresses, ports, sequence numbers, TTL, and flags.
 *   **Interface Detection:** Automatically detects available system network interfaces.
 *   **Threaded Engine:** Core packet sniffing runs in a background thread, keeping the interactive CLI fully responsive.
-*   **Live Statistics:** View a live packet counter while the capture is running.
+*   **Live Statistics:** View a live packet counter and real-time structured packet decodes while the capture is running.
 *   **Modular Architecture:** Cleanly separated core engine and CLI for future scalability.
 
 ##  Prerequisites
@@ -46,7 +48,7 @@ sudo python3 src/main.py
 
 ### CLI Commands
 Once inside the ByteViper interactive shell, you can use the following commands:
-*   `start` - Begins packet capture on the selected interface.
+*   `start [live]` - Begins packet capture on the selected interface. Add `live` for a real-time parsing stream.
 *   `stat`  - Displays the current number of captured packets.
 *   `stop`  - Halts the packet capture process.
 *   `exit`  - Safely stops any running captures and exits the application.
@@ -55,9 +57,9 @@ Once inside the ByteViper interactive shell, you can use the following commands:
 
 This project is built in iterative stages to add real capabilities step-by-step:
 
-- [x] **Stage 1: Project Foundation & Network Packet Capture** - Core engine built with Python and Scapy.
-- [ ] **Stage 2:** *Pending* (Focusing on packet parsing and analysis)
-- [ ] **Stage 3:** *Pending* (Focusing on detection rules and alerts)
+- [x] **Project Foundation & Network Packet Capture** - Core engine built with Python and Scapy.
+- [x] **Protocol Parsing Engine** - Structured data extraction for L2-L7 protocols.
+- [ ] **Detection Rules and Alerts** - *Pending* (Focusing on identifying malicious traffic)
 
 ---
 *Created as a portfolio-level cybersecurity project.*
