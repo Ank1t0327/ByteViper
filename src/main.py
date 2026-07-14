@@ -15,7 +15,7 @@ def print_banner():
               __/ |                                
              |___/    Network Detection System     
     ================================================
-    Stage 1: Packet Capture Engine
+    Stage 2: Protocol Parsing Engine
     """
     print(banner)
 
@@ -58,8 +58,8 @@ def main():
     sniffer.set_interface(selected_iface)
 
     print("\nCommands:")
-    print("  start - Start packet capture")
-    print("  stop  - Stop packet capture")
+    print("  start [live] - Start packet capture (add 'live' for real-time parsing stream)")
+    print("  stop         - Stop packet capture")
     print("  stat  - Show packet count")
     print("  exit  - Quit the application")
 
@@ -67,13 +67,15 @@ def main():
         try:
             cmd = input("\nByteViper> ").strip().lower()
             
-            if cmd == "start":
+            if cmd.startswith("start"):
                 if sniffer.is_running():
                     print("[!] Capture is already running.")
                 else:
+                    live_mode = "live" in cmd
                     try:
-                        print(f"[*] Starting capture on {selected_iface}...")
-                        sniffer.start()
+                        mode_str = "LIVE" if live_mode else "SILENT"
+                        print(f"[*] Starting capture on {selected_iface} in {mode_str} mode...")
+                        sniffer.start(live=live_mode)
                         print("[+] Capture started successfully.")
                     except Exception as e:
                         print(f"[!] Failed to start capture: {e}")

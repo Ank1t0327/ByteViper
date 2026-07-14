@@ -1,6 +1,7 @@
 import threading
 import time
 from scapy.all import AsyncSniffer, get_if_list, get_if_hwaddr, conf
+from core.parser import PacketParser
 
 class PacketSniffer:
     def __init__(self, interface=None):
@@ -8,6 +9,8 @@ class PacketSniffer:
         self.packet_count = 0
         self.sniffer = None
         self._is_capturing = False
+        self.parser = PacketParser()
+        self.live_output = False
         
     @staticmethod
     def get_interfaces():
@@ -22,8 +25,17 @@ class PacketSniffer:
     def _packet_handler(self, packet):
         """Callback function called for each captured packet."""
         self.packet_count += 1
+        try:
+            parsed_data = self.parser.parse(packet)
+            if self.live_output:
+                layers_list = [layer.get("layer", "Unknown") for layer in parsed_data.get("layers", [])]
+                layers_str = " -> ".join(layers_list)
+                print(f"  [Packet {self.packet_count}] {parsed_data.get('length')} bytes | {layers_str}")
+        except Exception as e:
+            # Silently handle parsing errors for now
+            pass
 
-    def start(self):
+    def start(self, live=False):
         """Starts the packet capture in a background thread."""
         if self._is_capturing:
             return False
@@ -33,6 +45,7 @@ class PacketSniffer:
 
         self.packet_count = 0
         self._is_capturing = True
+        self.live_output = live
 
         # AsyncSniffer runs in its own thread
         self.sniffer = AsyncSniffer(
