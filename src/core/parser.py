@@ -1,5 +1,6 @@
 import socket
-from scapy.all import Packet, Ether, IP, IPv6, ARP, TCP, UDP, ICMP
+from scapy.all import Packet, Ether, IP, IPv6, ARP, TCP, UDP, ICMP, DNS
+from scapy.layers.http import HTTPRequest, HTTPResponse
 
 class PacketParser:
     """
@@ -40,6 +41,14 @@ class PacketParser:
             parsed_data["layers"].append(self._parse_udp(packet[UDP]))
         elif packet.haslayer(ICMP):
             parsed_data["layers"].append(self._parse_icmp(packet[ICMP]))
+
+        # Layer 7 (Application)
+        if packet.haslayer(DNS):
+            parsed_data["layers"].append(self._parse_dns(packet[DNS]))
+        if packet.haslayer(HTTPRequest):
+            parsed_data["layers"].append(self._parse_http_req(packet[HTTPRequest]))
+        elif packet.haslayer(HTTPResponse):
+            parsed_data["layers"].append(self._parse_http_resp(packet[HTTPResponse]))
 
         return parsed_data
 
@@ -108,4 +117,35 @@ class PacketParser:
             "code": icmp_layer.code,
             "id": getattr(icmp_layer, 'id', None),
             "seq": getattr(icmp_layer, 'seq', None)
+        }
+
+    def _parse_dns(self, dns_layer) -> dict:
+        qname = None
+        if hasattr(dns_layer, 'qd') and dns_layer.qd is not None:
+            qname = dns_layer.qd.qname.decode('utf-8', errors='ignore') if isinstance(dns_layer.qd.qname, bytes) else dns_layer.qd.qname
+        
+        return {
+            "layer": "DNS",
+            "id": dns_layer.id,
+            "qr": dns_layer.qr,
+            "opcode": dns_layer.opcode,
+            "rcode": dns_layer.rcode,
+            "qname": qname
+        }
+
+    def _parse_http_req(self, http_req_layer) -> dict:
+        return {
+            "layer": "HTTP Request",
+            "method": http_req_layer.Method.decode('utf-8', errors='ignore') if http_req_layer.Method else None,
+            "host": http_req_layer.Host.decode('utf-8', errors='ignore') if http_req_layer.Host else None,
+            "path": http_req_layer.Path.decode('utf-8', errors='ignore') if http_req_layer.Path else None,
+            "user_agent": http_req_layer.User_Agent.decode('utf-8', errors='ignore') if getattr(http_req_layer, 'User_Agent', None) else None
+        }
+
+    def _parse_http_resp(self, http_resp_layer) -> dict:
+        return {
+            "layer": "HTTP Response",
+            "status_code": http_resp_layer.Status_Code.decode('utf-8', errors='ignore') if http_resp_layer.Status_Code else None,
+            "reason": http_resp_layer.Reason_Phrase.decode('utf-8', errors='ignore') if getattr(http_resp_layer, 'Reason_Phrase', None) else None,
+            "server": http_resp_layer.Server.decode('utf-8', errors='ignore') if getattr(http_resp_layer, 'Server', None) else None
         }
