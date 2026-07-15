@@ -6,9 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // State
     const allPackets = [];
     const allSessions = [];
+    const allAlerts = [];
     let packetIndexCounter = 1;
     const packetTable = document.getElementById('packet-tbody');
     const sessionTable = document.getElementById('session-tbody');
+    const alertTable = document.getElementById('alert-tbody');
     
     // Tabs
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -29,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const elRate = document.getElementById('stat-rate');
     const elBytes = document.getElementById('stat-bytes');
     const elProtocol = document.getElementById('stat-protocol');
+    const elAlerts = document.getElementById('stat-alerts');
     const statusIndicator = document.querySelector('.status-indicator');
     const statusText = document.getElementById('status-text');
     
@@ -73,11 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetch('/api/clear', { method: 'POST' });
             allPackets.length = 0;
             allSessions.length = 0;
+            allAlerts.length = 0;
             packetIndexCounter = 1;
             lastTimestamp = 0;
+            lastAlertTimestamp = 0;
             updateTable();
             updateSessionTable();
+            updateAlertTable();
             computeStats();
+            elAlerts.textContent = 0;
         } catch (err) {
             console.error("Failed to clear data:", err);
         }
@@ -291,8 +298,52 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    let lastAlertTimestamp = 0;
+    
+    async function fetchAlerts() {
+        if (isPaused) return;
+        try {
+            const res = await fetch(`/api/alerts?since=${lastAlertTimestamp}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            if (data.alerts && data.alerts.length > 0) {
+                lastAlertTimestamp = data.alerts[data.alerts.length - 1].timestamp;
+                allAlerts.push(...data.alerts);
+                
+                if (allAlerts.length > 1000) {
+                    allAlerts.splice(0, allAlerts.length - 1000);
+                }
+                
+                elAlerts.textContent = allAlerts.length;
+                updateAlertTable();
+            }
+        } catch (err) {
+            console.error("Failed to fetch alerts:", err);
+        }
+    }
+
+    function updateAlertTable() {
+        alertTable.innerHTML = '';
+        const sorted = allAlerts.slice().sort((a, b) => b.timestamp - a.timestamp);
+        
+        sorted.forEach(a => {
+            const tr = document.createElement('tr');
+            tr.className = 'row-enter';
+            tr.innerHTML = `
+                <td>${formatTime(a.timestamp)}</td>
+                <td><span class="badge severity-${a.severity.toLowerCase()}">${a.severity}</span></td>
+                <td>${a.rule_name}</td>
+                <td>${a.src_ip}</td>
+                <td>${a.description}</td>
+            `;
+            alertTable.appendChild(tr);
+        });
+    }
+
     setInterval(() => {
         fetchPackets();
         fetchSessions();
+        fetchAlerts();
     }, updateIntervalMs);
 });
