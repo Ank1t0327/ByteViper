@@ -343,3 +343,54 @@ tr:last-child td { border-bottom: none; }
     from { opacity: 0; transform: translateY(-8px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Tabs */
+.tabs-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: -1rem;
+    padding: 0 0.5rem;
+    z-index: 5;
+    position: relative;
+}
+
+.tab-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    border-bottom: none;
+    color: var(--text-secondary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: var(--bg-glass);
+    color: var(--accent);
+    border-top: 2px solid var(--accent);
+    backdrop-filter: blur(16px);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* State Badges */
+.badge.state-new { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+.badge.state-syn_sent { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge.state-established { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge.state-active { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge.state-closed { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
