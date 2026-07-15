@@ -2,6 +2,7 @@ import os
 import threading
 from flask import Flask, render_template, jsonify, request
 from web.streamer import streamer
+from core.session import session_tracker
 
 app = Flask(__name__)
 
@@ -15,9 +16,15 @@ def get_packets():
     packets = streamer.get_packets_since(since)
     return jsonify({"packets": packets})
 
+@app.route('/api/sessions')
+def get_sessions():
+    sessions = session_tracker.get_active_sessions()
+    return jsonify({"sessions": sessions})
+
 @app.route('/api/clear', methods=['POST'])
 def clear_packets():
     streamer.clear()
+    session_tracker.sessions.clear() # clear sessions too
     return jsonify({"status": "success"})
 
 def run_server(host='127.0.0.1', port=5000):
