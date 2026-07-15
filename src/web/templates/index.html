@@ -75,7 +75,12 @@
             </div>
         </section>
 
-        <section class="table-section glass-panel">
+        <div class="tabs-container">
+            <button class="tab-btn active" data-tab="tab-packets">Live Feed</button>
+            <button class="tab-btn" data-tab="tab-sessions">Flow Sessions</button>
+        </div>
+
+        <section class="table-section glass-panel tab-content active" id="tab-packets">
             <div class="table-container">
                 <table id="packet-table">
                     <thead>
@@ -90,6 +95,27 @@
                         </tr>
                     </thead>
                     <tbody id="packet-tbody">
+                        <!-- Rows dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="table-section glass-panel tab-content" id="tab-sessions">
+            <div class="table-container">
+                <table id="session-table">
+                    <thead>
+                        <tr>
+                            <th>Protocol</th>
+                            <th>State</th>
+                            <th>Endpoint A</th>
+                            <th>Endpoint B</th>
+                            <th>Packets</th>
+                            <th>Bytes</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="session-tbody">
                         <!-- Rows dynamically populated -->
                     </tbody>
                 </table>
