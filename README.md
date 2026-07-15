@@ -62,3 +62,4 @@ This project is built in iterative stages to add real capabilities step-by-step:
 - [ ] **Detection Rules and Alerts** - *Pending* (Focusing on identifying malicious traffic)
 
 ---
+\n## Stage 3: Live Dashboard\nRun `dashboard` command in the CLI to launch the live web dashboard.
