@@ -45,6 +45,10 @@
                 <h3>Top Protocol</h3>
                 <div class="stat-value highlight" id="stat-protocol">-</div>
             </div>
+            <div class="stat-card glass-panel alert-card">
+                <h3>Total Alerts</h3>
+                <div class="stat-value highlight-danger" id="stat-alerts">0</div>
+            </div>
         </section>
 
         <section class="filters-section glass-panel">
@@ -78,6 +82,7 @@
         <div class="tabs-container">
             <button class="tab-btn active" data-tab="tab-packets">Live Feed</button>
             <button class="tab-btn" data-tab="tab-sessions">Flow Sessions</button>
+            <button class="tab-btn" data-tab="tab-alerts">Security Alerts</button>
         </div>
 
         <section class="table-section glass-panel tab-content active" id="tab-packets">
@@ -116,6 +121,25 @@
                         </tr>
                     </thead>
                     <tbody id="session-tbody">
+                        <!-- Rows dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="table-section glass-panel tab-content" id="tab-alerts">
+            <div class="table-container">
+                <table id="alert-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Severity</th>
+                            <th>Rule</th>
+                            <th>Source IP</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alert-tbody">
                         <!-- Rows dynamically populated -->
                     </tbody>
                 </table>
