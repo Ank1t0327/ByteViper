@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnClear = document.getElementById('btn-clear-filters');
     const btnPause = document.getElementById('btn-pause');
 
+    const btnClearData = document.getElementById('btn-clear-data');
+
     // Filter event listeners
     [filterIp, filterProtocol, filterPort].forEach(el => {
         el.addEventListener('input', updateTable);
@@ -47,6 +49,19 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPause.classList.remove('paused');
             statusIndicator.classList.remove('paused');
             statusText.textContent = "Live Capture";
+        }
+    });
+
+    btnClearData.addEventListener('click', async () => {
+        try {
+            await fetch('/api/clear', { method: 'POST' });
+            allPackets.length = 0;
+            packetIndexCounter = 1;
+            lastTimestamp = 0;
+            updateTable();
+            computeStats();
+        } catch (err) {
+            console.error("Failed to clear data:", err);
         }
     });
 
