@@ -15,6 +15,11 @@ def get_packets():
     packets = streamer.get_packets_since(since)
     return jsonify({"packets": packets})
 
+@app.route('/api/clear', methods=['POST'])
+def clear_packets():
+    streamer.clear()
+    return jsonify({"status": "success"})
+
 def run_server(host='127.0.0.1', port=5000):
     # Disable flask reloader in thread
     app.run(host=host, port=port, debug=False, use_reloader=False)
