@@ -3,6 +3,7 @@ import time
 import threading
 from core.sniffer import PacketSniffer
 from core.session import session_tracker
+from core.rules import rule_engine
 from web.app import start_web_server
 from web.streamer import streamer
 
@@ -64,13 +65,19 @@ def main():
     print("  start [live] - Start packet capture (add 'live' for real-time parsing stream)")
     print("  dashboard    - Start web dashboard for live traffic monitoring")
     print("  sessions     - Show active flow sessions")
+    print("  alerts       - Show triggered security alerts")
     print("  stop         - Stop packet capture")
     print("  stat         - Show packet count")
     print("  exit         - Quit the application")
 
-    # Link the sniffer callback to the web streamer and session tracker
+    # Link the sniffer callback to the web streamer, session tracker, and rule engine
     sniffer.register_callback(streamer.add_packet)
     sniffer.register_callback(session_tracker.process_packet)
+    sniffer.register_callback(rule_engine.process_packet)
+    
+    # Link rule engine alerts to streamer
+    rule_engine.register_callback(streamer.add_alert)
+    
     web_server_running = False
 
     while True:
@@ -126,6 +133,18 @@ def main():
                         print(f"{s['protocol']:<8} {s['state']:<15} {s['endpoint_a']:<25} {s['endpoint_b']:<25} {s['packet_count']:<10} {s['total_bytes']}")
                     print("-" * 95)
                     print(f"Total Sessions: {len(sessions)}")
+
+            elif cmd == "alerts":
+                alerts = streamer.get_alerts_since(0)
+                if not alerts:
+                    print("[-] No alerts triggered.")
+                else:
+                    print(f"\n{'Severity':<10} {'Rule':<20} {'Source IP':<15} {'Description'}")
+                    print("-" * 80)
+                    for a in alerts[-20:]:
+                        print(f"{a['severity']:<10} {a['rule_name']:<20} {a['src_ip']:<15} {a['description']}")
+                    print("-" * 80)
+                    print(f"Total Alerts: {len(alerts)}")
 
             elif cmd == "stat":
                 if sniffer.is_running():
