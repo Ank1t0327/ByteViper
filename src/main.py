@@ -2,6 +2,7 @@ import sys
 import time
 import threading
 from core.sniffer import PacketSniffer
+from core.session import session_tracker
 from web.app import start_web_server
 from web.streamer import streamer
 
@@ -62,12 +63,14 @@ def main():
     print("\nCommands:")
     print("  start [live] - Start packet capture (add 'live' for real-time parsing stream)")
     print("  dashboard    - Start web dashboard for live traffic monitoring")
+    print("  sessions     - Show active flow sessions")
     print("  stop         - Stop packet capture")
     print("  stat         - Show packet count")
     print("  exit         - Quit the application")
 
-    # Link the sniffer callback to the web streamer
+    # Link the sniffer callback to the web streamer and session tracker
     sniffer.register_callback(streamer.add_packet)
+    sniffer.register_callback(session_tracker.process_packet)
     web_server_running = False
 
     while True:
@@ -112,6 +115,18 @@ def main():
                 else:
                     print("[*] Capture is already running.")
             
+            elif cmd == "sessions":
+                sessions = session_tracker.get_active_sessions()
+                if not sessions:
+                    print("[-] No active sessions.")
+                else:
+                    print(f"\n{'Protocol':<8} {'State':<15} {'Endpoint A':<25} {'Endpoint B':<25} {'Packets':<10} {'Bytes'}")
+                    print("-" * 95)
+                    for s in sessions[-20:]: # show last 20
+                        print(f"{s['protocol']:<8} {s['state']:<15} {s['endpoint_a']:<25} {s['endpoint_b']:<25} {s['packet_count']:<10} {s['total_bytes']}")
+                    print("-" * 95)
+                    print(f"Total Sessions: {len(sessions)}")
+
             elif cmd == "stat":
                 if sniffer.is_running():
                     print(f"[*] Live Packet Count: {sniffer.get_packet_count()}")
