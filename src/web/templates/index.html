@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByteViper | Live Traffic Dashboard</title>
+    <!-- Modern Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-mode">
+    <div class="background-effects">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+    
+    <div class="dashboard-container">
+        <header class="dashboard-header glass-panel">
+            <div class="logo">
+                <h1>ByteViper <span class="highlight">NDS</span></h1>
+                <p>Real-Time Network Detection System</p>
+            </div>
+            <div class="status-indicator">
+                <span class="dot pulse"></span>
+                <span class="status-text" id="status-text">Live Capture</span>
+            </div>
+        </header>
+
+        <section class="stats-grid">
+            <div class="stat-card glass-panel">
+                <h3>Total Packets</h3>
+                <div class="stat-value" id="stat-total">0</div>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Packet Rate</h3>
+                <div class="stat-value" id="stat-rate">0 <span class="unit">pkts/s</span></div>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Total Bytes</h3>
+                <div class="stat-value" id="stat-bytes">0 <span class="unit">B</span></div>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Top Protocol</h3>
+                <div class="stat-value highlight" id="stat-protocol">-</div>
+            </div>
+        </section>
+
+        <section class="filters-section glass-panel">
+            <div class="filter-group">
+                <label for="filter-ip">IP Address</label>
+                <input type="text" id="filter-ip" placeholder="Search Source or Dest IP...">
+            </div>
+            <div class="filter-group">
+                <label for="filter-protocol">Protocol</label>
+                <select id="filter-protocol">
+                    <option value="">All Protocols</option>
+                    <option value="TCP">TCP</option>
+                    <option value="UDP">UDP</option>
+                    <option value="ICMP">ICMP</option>
+                    <option value="HTTP">HTTP</option>
+                    <option value="DNS">DNS</option>
+                    <option value="ARP">ARP</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-port">Port</label>
+                <input type="text" id="filter-port" placeholder="e.g. 80, 443">
+            </div>
+            <div class="filter-group actions">
+                <button id="btn-clear-filters" class="btn btn-secondary">Clear</button>
+                <button id="btn-pause" class="btn btn-primary">Pause Feed</button>
+            </div>
+        </section>
+
+        <section class="table-section glass-panel">
+            <div class="table-container">
+                <table id="packet-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Time</th>
+                            <th>Source</th>
+                            <th>Destination</th>
+                            <th>Protocol</th>
+                            <th>Size</th>
+                            <th>Info</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packet-tbody">
+                        <!-- Rows dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
