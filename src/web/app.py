@@ -21,6 +21,12 @@ def get_sessions():
     sessions = session_tracker.get_active_sessions()
     return jsonify({"sessions": sessions})
 
+@app.route('/api/alerts')
+def get_alerts():
+    since = request.args.get('since', default=0.0, type=float)
+    alerts = streamer.get_alerts_since(since)
+    return jsonify({"alerts": alerts})
+
 @app.route('/api/clear', methods=['POST'])
 def clear_packets():
     streamer.clear()
