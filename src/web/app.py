@@ -1,7 +1,7 @@
 import os
 import threading
 from flask import Flask, render_template, jsonify, request
-from src.web.streamer import streamer
+from web.streamer import streamer
 
 app = Flask(__name__)
 
