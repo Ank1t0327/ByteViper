@@ -5,8 +5,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // State
     const allPackets = [];
+    const allSessions = [];
     let packetIndexCounter = 1;
     const packetTable = document.getElementById('packet-tbody');
+    const sessionTable = document.getElementById('session-tbody');
+    
+    // Tabs
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+    });
     
     // Stats elements
     const elTotal = document.getElementById('stat-total');
@@ -56,9 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await fetch('/api/clear', { method: 'POST' });
             allPackets.length = 0;
+            allSessions.length = 0;
             packetIndexCounter = 1;
             lastTimestamp = 0;
             updateTable();
+            updateSessionTable();
             computeStats();
         } catch (err) {
             console.error("Failed to clear data:", err);
@@ -233,5 +251,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    setInterval(fetchPackets, updateIntervalMs);
+    async function fetchSessions() {
+        if (isPaused) return;
+        try {
+            const res = await fetch('/api/sessions');
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            if (data.sessions) {
+                allSessions.length = 0;
+                allSessions.push(...data.sessions);
+                updateSessionTable();
+            }
+        } catch (err) {
+            console.error("Failed to fetch sessions:", err);
+        }
+    }
+
+    function updateSessionTable() {
+        sessionTable.innerHTML = '';
+        const sorted = allSessions.slice().sort((a, b) => b.last_time - a.last_time);
+        
+        sorted.forEach(s => {
+            const tr = document.createElement('tr');
+            tr.className = 'row-enter';
+            
+            const duration = Math.max(0, s.last_time - s.start_time).toFixed(2);
+            
+            tr.innerHTML = `
+                <td><span class="badge ${getBadgeClass(s.protocol)}">${s.protocol}</span></td>
+                <td><span class="badge state-${s.state.toLowerCase()}">${s.state}</span></td>
+                <td>${s.endpoint_a}</td>
+                <td>${s.endpoint_b}</td>
+                <td>${s.packet_count}</td>
+                <td>${formatBytes(s.total_bytes)}</td>
+                <td>${duration}s</td>
+            `;
+            sessionTable.appendChild(tr);
+        });
+    }
+
+    setInterval(() => {
+        fetchPackets();
+        fetchSessions();
+    }, updateIntervalMs);
 });

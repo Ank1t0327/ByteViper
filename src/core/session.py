@@ -82,7 +82,21 @@ class SessionTracker:
             elif protocol == 'UDP':
                 sess['state'] = 'ACTIVE'
 
+    def cleanup_old_sessions(self, timeout_sec=300):
+        with self.lock:
+            now = time.time()
+            to_remove = []
+            for k, sess in self.sessions.items():
+                age = now - sess['last_time']
+                if sess['state'] == 'CLOSED' and age > 60:
+                    to_remove.append(k)
+                elif age > timeout_sec:
+                    to_remove.append(k)
+            for k in to_remove:
+                del self.sessions[k]
+
     def get_active_sessions(self):
+        self.cleanup_old_sessions()
         with self.lock:
             return list(self.sessions.values())
 
