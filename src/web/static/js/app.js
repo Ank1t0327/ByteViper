@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const elBytes = document.getElementById('stat-bytes');
     const elProtocol = document.getElementById('stat-protocol');
     const elAlerts = document.getElementById('stat-alerts');
+    const elEngine = document.getElementById('stat-engine');
+    const engineCard = document.getElementById('engine-status-card');
     const statusIndicator = document.querySelector('.status-indicator');
     const statusText = document.getElementById('status-text');
     
@@ -341,9 +343,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function fetchStatus() {
+        if (isPaused) return;
+        try {
+            const res = await fetch('/api/status');
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            if (data.anomaly_engine) {
+                if (data.anomaly_engine.is_learning) {
+                    elEngine.innerHTML = `Learning <span style="font-size: 0.8rem; color: var(--text-secondary);">(${data.anomaly_engine.progress}%)</span>`;
+                    engineCard.style.borderTop = "2px solid var(--highlight)";
+                } else {
+                    elEngine.innerHTML = `Active <span style="font-size: 0.8rem; color: var(--text-secondary);">(Baseline)</span>`;
+                    engineCard.style.borderTop = "2px solid #3b82f6";
+                }
+            }
+        } catch (err) {
+            console.error("Failed to fetch status:", err);
+        }
+    }
+
     setInterval(() => {
         fetchPackets();
         fetchSessions();
         fetchAlerts();
+        fetchStatus();
     }, updateIntervalMs);
 });
