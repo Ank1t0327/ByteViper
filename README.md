@@ -63,3 +63,4 @@ This project is built in iterative stages to add real capabilities step-by-step:
 
 ---
 \n## Stage 3: Live Dashboard\nRun `dashboard` command in the CLI to launch the live web dashboard.
+\n## Stage 4: Session Tracking\nThe engine now tracks full 5-tuple flows and performs basic TCP state analysis.
