@@ -11,7 +11,11 @@ class PacketSniffer:
         self._is_capturing = False
         self.parser = PacketParser()
         self.live_output = False
-        
+        self.callbacks = []
+
+    def register_callback(self, callback):
+        self.callbacks.append(callback)
+
     @staticmethod
     def get_interfaces():
         """Returns a list of available network interfaces."""
@@ -27,10 +31,14 @@ class PacketSniffer:
         self.packet_count += 1
         try:
             parsed_data = self.parser.parse(packet)
+            parsed_data['timestamp'] = float(packet.time)
             if self.live_output:
                 layers_list = [layer.get("layer", "Unknown") for layer in parsed_data.get("layers", [])]
                 layers_str = " -> ".join(layers_list)
                 print(f"  [Packet {self.packet_count}] {parsed_data.get('length')} bytes | {layers_str}")
+            
+            for cb in self.callbacks:
+                cb(parsed_data)
         except Exception as e:
             # Silently handle parsing errors for now
             pass

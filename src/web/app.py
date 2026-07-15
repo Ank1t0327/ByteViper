@@ -1,15 +1,19 @@
 import os
 import threading
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
+from src.web.streamer import streamer
 
 app = Flask(__name__)
-
-# Basic in-memory store for packets (to be replaced by streamer)
-app.config['PACKETS'] = []
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/packets')
+def get_packets():
+    since = request.args.get('since', default=0.0, type=float)
+    packets = streamer.get_packets_since(since)
+    return jsonify({"packets": packets})
 
 def run_server(host='127.0.0.1', port=5000):
     # Disable flask reloader in thread
