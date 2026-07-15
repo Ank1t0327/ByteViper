@@ -2,6 +2,8 @@ import sys
 import time
 import threading
 from core.sniffer import PacketSniffer
+from web.app import start_web_server
+from web.streamer import streamer
 
 def print_banner():
     banner = r"""
@@ -59,9 +61,14 @@ def main():
 
     print("\nCommands:")
     print("  start [live] - Start packet capture (add 'live' for real-time parsing stream)")
+    print("  dashboard    - Start web dashboard for live traffic monitoring")
     print("  stop         - Stop packet capture")
-    print("  stat  - Show packet count")
-    print("  exit  - Quit the application")
+    print("  stat         - Show packet count")
+    print("  exit         - Quit the application")
+
+    # Link the sniffer callback to the web streamer
+    sniffer.register_callback(streamer.add_packet)
+    web_server_running = False
 
     while True:
         try:
@@ -88,6 +95,22 @@ def main():
                     print("[*] Stopping capture...")
                     sniffer.stop()
                     print(f"[+] Capture stopped. Total packets seen: {sniffer.get_packet_count()}")
+            
+            elif cmd == "dashboard":
+                if not web_server_running:
+                    print("[*] Starting Web Dashboard on http://127.0.0.1:5000 ...")
+                    start_web_server()
+                    web_server_running = True
+                
+                if not sniffer.is_running():
+                    print("[*] Auto-starting capture for dashboard...")
+                    try:
+                        sniffer.start(live=False)
+                        print("[+] Capture started in background.")
+                    except Exception as e:
+                        print(f"[!] Failed to start capture: {e}")
+                else:
+                    print("[*] Capture is already running.")
             
             elif cmd == "stat":
                 if sniffer.is_running():
