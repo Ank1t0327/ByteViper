@@ -27,6 +27,13 @@ def get_alerts():
     alerts = streamer.get_alerts_since(since)
     return jsonify({"alerts": alerts})
 
+@app.route('/api/status')
+def get_status():
+    from core.anomaly import anomaly_engine
+    return jsonify({
+        "anomaly_engine": anomaly_engine.get_status()
+    })
+
 @app.route('/api/clear', methods=['POST'])
 def clear_packets():
     streamer.clear()

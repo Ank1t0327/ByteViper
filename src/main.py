@@ -4,6 +4,7 @@ import threading
 from core.sniffer import PacketSniffer
 from core.session import session_tracker
 from core.rules import rule_engine
+from core.anomaly import anomaly_engine
 from web.app import start_web_server
 from web.streamer import streamer
 
@@ -74,9 +75,11 @@ def main():
     sniffer.register_callback(streamer.add_packet)
     sniffer.register_callback(session_tracker.process_packet)
     sniffer.register_callback(rule_engine.process_packet)
+    sniffer.register_callback(anomaly_engine.process_packet)
     
     # Link rule engine alerts to streamer
     rule_engine.register_callback(streamer.add_alert)
+    anomaly_engine.register_callback(streamer.add_alert)
     
     web_server_running = False
 
