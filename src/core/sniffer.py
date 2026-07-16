@@ -1,10 +1,11 @@
 import threading
 import time
+from collections import deque
 from scapy.all import AsyncSniffer, get_if_list, get_if_hwaddr, conf
 from core.parser import PacketParser
 
 class PacketSniffer:
-    def __init__(self, interface=None):
+    def __init__(self, interface=None, max_history=2000):
         self.interface = interface
         self.packet_count = 0
         self.sniffer = None
@@ -12,6 +13,7 @@ class PacketSniffer:
         self.parser = PacketParser()
         self.live_output = False
         self.callbacks = []
+        self.raw_packets = deque(maxlen=max_history)
 
     def register_callback(self, callback):
         self.callbacks.append(callback)
@@ -29,6 +31,7 @@ class PacketSniffer:
     def _packet_handler(self, packet):
         """Callback function called for each captured packet."""
         self.packet_count += 1
+        self.raw_packets.append(packet)
         try:
             parsed_data = self.parser.parse(packet)
             parsed_data['timestamp'] = float(packet.time)
