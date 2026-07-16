@@ -1,5 +1,5 @@
 import socket
-from scapy.all import Packet, Ether, IP, IPv6, ARP, TCP, UDP, ICMP, DNS
+from scapy.all import Packet, Ether, IP, IPv6, ARP, TCP, UDP, ICMP, DNS, Raw
 from scapy.layers.http import HTTPRequest, HTTPResponse
 
 class PacketParser:
@@ -50,7 +50,63 @@ class PacketParser:
         elif packet.haslayer(HTTPResponse):
             parsed_data["layers"].append(self._parse_http_resp(packet[HTTPResponse]))
 
+        # Raw Payload Extraction
+        raw_payload = b""
+        if packet.haslayer(Raw):
+            raw_payload = packet[Raw].load
+        else:
+            for proto in [TCP, UDP]:
+                if packet.haslayer(proto):
+                    try:
+                        payload_layer = packet[proto].payload
+                        if payload_layer:
+                            p_bytes = bytes(payload_layer)
+                            if p_bytes:
+                                raw_payload = p_bytes
+                                break
+                    except Exception:
+                        pass
+
+        # Store raw payload bytes internally for DPI rules, truncate/decode for frontend/JSON transmission
+        parsed_data["raw_payload_bytes"] = raw_payload
+        
+        ui_payload = raw_payload
+        is_truncated = False
+        if len(raw_payload) > 2048:
+            ui_payload = raw_payload[:2048]
+            is_truncated = True
+
+        parsed_data["payload"] = ui_payload.decode("utf-8", errors="replace") if ui_payload else ""
+        parsed_data["payload_hex"] = ui_payload.hex() if ui_payload else ""
+        
+        hexdump_str = self._format_hexdump(ui_payload) if ui_payload else ""
+        if is_truncated:
+            hexdump_str += f"\n... [Truncated; payload exceeds 2KB (Total size: {len(raw_payload)} bytes)]"
+            
+        parsed_data["payload_hexdump"] = hexdump_str
+
         return parsed_data
+
+    def _format_hexdump(self, data: bytes) -> str:
+        if not data:
+            return ""
+        lines = []
+        for i in range(0, len(data), 16):
+            chunk = data[i:i+16]
+            left_parts = [f"{b:02x}" for b in chunk[:8]]
+            right_parts = [f"{b:02x}" for b in chunk[8:]]
+            
+            left_str = " ".join(left_parts)
+            right_str = " ".join(right_parts)
+            
+            left_str_padded = f"{left_str:<23}"
+            right_str_padded = f"{right_str:<23}"
+            
+            hex_str = f"{left_str_padded}  {right_str_padded}"
+            
+            ascii_str = "".join(chr(b) if 32 <= b <= 126 else "." for b in chunk)
+            lines.append(f"{i:04x}  {hex_str}  |{ascii_str}|")
+        return "\n".join(lines)
 
     def _parse_ethernet(self, eth_layer) -> dict:
         return {
