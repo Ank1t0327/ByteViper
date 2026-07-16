@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const allSessions = [];
     const allAlerts = [];
     let packetIndexCounter = 1;
+    let selectedPacketIndex = null;
+    let selectedPacket = null;
+    
     const packetTable = document.getElementById('packet-tbody');
     const sessionTable = document.getElementById('session-tbody');
     const alertTable = document.getElementById('alert-tbody');
@@ -23,6 +26,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             btn.classList.add('active');
             document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+    });
+
+    // Inspector Payload tabs click
+    const pTabBtns = document.querySelectorAll('.payload-tab-btn');
+    pTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            pTabBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.payload-tab-content').forEach(c => c.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.ptab).classList.add('active');
         });
     });
     
@@ -43,8 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterPort = document.getElementById('filter-port');
     const btnClear = document.getElementById('btn-clear-filters');
     const btnPause = document.getElementById('btn-pause');
-
     const btnClearData = document.getElementById('btn-clear-data');
+
+    // Threat Intel elements
+    const btnUpdateIntel = document.getElementById('btn-update-intel');
+    const intelIpCount = document.getElementById('intel-ip-count');
+    const intelDomainCount = document.getElementById('intel-domain-count');
+    const intelLastUpdated = document.getElementById('intel-last-updated');
+    const intelAlertsTable = document.getElementById('intel-alerts-tbody');
 
     // Filter event listeners
     [filterIp, filterProtocol, filterPort].forEach(el => {
@@ -82,15 +103,52 @@ document.addEventListener('DOMContentLoaded', () => {
             packetIndexCounter = 1;
             lastTimestamp = 0;
             lastAlertTimestamp = 0;
+            
+            // Clear inspector
+            selectedPacketIndex = null;
+            selectedPacket = null;
+            showPacketInspector(null);
+            
             updateTable();
             updateSessionTable();
             updateAlertTable();
+            updateThreatIntelAlertsTable();
             computeStats();
             elAlerts.textContent = 0;
         } catch (err) {
             console.error("Failed to clear data:", err);
         }
     });
+
+    if (btnUpdateIntel) {
+        btnUpdateIntel.addEventListener('click', async () => {
+            try {
+                btnUpdateIntel.disabled = true;
+                btnUpdateIntel.textContent = "Updating feeds...";
+                
+                const res = await fetch('/api/threat_intel/update', { method: 'POST' });
+                if (res.ok) {
+                    let attempts = 0;
+                    const pollInterval = setInterval(async () => {
+                        const status = await fetchThreatIntelStatus();
+                        attempts++;
+                        if (!status || !status.is_updating || attempts > 30) {
+                            clearInterval(pollInterval);
+                            btnUpdateIntel.disabled = false;
+                            btnUpdateIntel.textContent = "Update Feeds";
+                        }
+                    }, 1000);
+                } else {
+                    btnUpdateIntel.disabled = false;
+                    btnUpdateIntel.textContent = "Update Feeds";
+                }
+            } catch (err) {
+                console.error("Failed to start feed update:", err);
+                btnUpdateIntel.disabled = false;
+                btnUpdateIntel.textContent = "Update Feeds";
+            }
+        });
+    }
 
     function formatBytes(bytes) {
         if (bytes === 0) return '0 B';
@@ -121,7 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Rate (packets in last 5 seconds based on real time)
         const now = Date.now() / 1000;
         const recentPackets = allPackets.filter(p => (now - p.timestamp) <= 5);
-        // If not enough time has passed or no recent packets, use overall rate or 0
         const rate = recentPackets.length > 0 ? recentPackets.length / 5.0 : 0;
         elRate.innerHTML = rate.toFixed(1) + ' <span class="unit">pkts/s</span>';
         
@@ -197,9 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateTable() {
-        packetTable.innerHTML = ''; // Clear table
+        packetTable.innerHTML = '';
         
-        // Filter and display last 100 packets
         const filteredPackets = [];
         for (let i = allPackets.length - 1; i >= 0; i--) {
             const p = allPackets[i];
@@ -215,6 +271,9 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredPackets.forEach(({p, details, index}) => {
             const tr = document.createElement('tr');
             tr.className = 'row-enter';
+            if (selectedPacketIndex === index) {
+                tr.classList.add('selected');
+            }
             tr.innerHTML = `
                 <td>${index}</td>
                 <td>${formatTime(p.timestamp)}</td>
@@ -224,8 +283,118 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${p.length}</td>
                 <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;" title="${details.info}">${details.info}</td>
             `;
+            
+            tr.addEventListener('click', () => {
+                document.querySelectorAll('#packet-table tbody tr').forEach(r => r.classList.remove('selected'));
+                tr.classList.add('selected');
+                selectedPacketIndex = index;
+                selectedPacket = p;
+                showPacketInspector(p);
+            });
+            
             packetTable.appendChild(tr);
         });
+    }
+
+    function showPacketInspector(packet) {
+        const placeholder = document.getElementById('inspector-placeholder');
+        const content = document.getElementById('inspector-content');
+        
+        if (!packet) {
+            placeholder.classList.remove('hidden');
+            content.classList.add('hidden');
+            return;
+        }
+        
+        placeholder.classList.add('hidden');
+        content.classList.remove('hidden');
+        
+        const details = getPrimaryInfo(packet);
+        
+        // Header
+        document.getElementById('inspect-proto').textContent = details.proto;
+        document.getElementById('inspect-proto').className = `badge ${getBadgeClass(details.proto)}`;
+        document.getElementById('inspect-time').textContent = formatTime(packet.timestamp);
+        
+        // DPI/Threat Intel Alerts
+        const alertsDiv = document.getElementById('inspect-dpi-alerts');
+        alertsDiv.innerHTML = '';
+        
+        const correlatedAlerts = allAlerts.filter(a => {
+            const timeDiff = Math.abs(a.timestamp - packet.timestamp);
+            return timeDiff < 1.5 && a.src_ip === details.src;
+        });
+        
+        if (correlatedAlerts.length > 0) {
+            alertsDiv.classList.remove('hidden');
+            correlatedAlerts.forEach(a => {
+                const div = document.createElement('div');
+                div.className = 'inspect-dpi-alert';
+                div.innerHTML = `
+                    <span class="inspect-dpi-alert-dot"></span>
+                    <span><strong>[${a.severity}] ${a.rule_name}</strong>: ${a.description}</span>
+                `;
+                alertsDiv.appendChild(div);
+            });
+        } else {
+            alertsDiv.classList.add('hidden');
+        }
+        
+        // Layer Tree
+        const layersContainer = document.getElementById('inspect-layers');
+        layersContainer.innerHTML = '';
+        
+        if (packet.layers && packet.layers.length > 0) {
+            packet.layers.forEach((layer, idx) => {
+                const node = document.createElement('div');
+                node.className = 'layer-node';
+                
+                const title = document.createElement('div');
+                title.className = 'layer-title';
+                title.innerHTML = `
+                    <span>${layer.layer} Layer</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(90deg); transition: transform 0.2s;"><path d="m9 18 6-6-6-6"/></svg>
+                `;
+                
+                const fields = document.createElement('div');
+                fields.className = 'layer-fields';
+                
+                let fieldCount = 0;
+                for (const [key, val] of Object.entries(layer)) {
+                    if (key === 'layer') continue;
+                    const fieldDiv = document.createElement('div');
+                    fieldDiv.className = 'layer-field';
+                    const keyFormatted = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    fieldDiv.innerHTML = `<span class="field-name">${keyFormatted}:</span> ${val}`;
+                    fields.appendChild(fieldDiv);
+                    fieldCount++;
+                }
+                
+                if (fieldCount === 0) {
+                    fields.innerHTML = '<div class="layer-field" style="color: var(--text-secondary);">No parameters</div>';
+                }
+                
+                title.addEventListener('click', () => {
+                    const isHidden = fields.classList.toggle('hidden');
+                    const svg = title.querySelector('svg');
+                    if (isHidden) {
+                        svg.style.transform = 'rotate(0deg)';
+                    } else {
+                        svg.style.transform = 'rotate(90deg)';
+                    }
+                });
+                
+                node.appendChild(title);
+                node.appendChild(fields);
+                layersContainer.appendChild(node);
+            });
+        } else {
+            layersContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem;">No layers parsed</div>';
+        }
+        
+        // Hex / Decoded Tab values
+        document.getElementById('inspect-hexdump').textContent = packet.payload_hexdump || "No payload data present in packet headers.";
+        document.getElementById('inspect-decoded').textContent = packet.payload || "No payload data present in packet headers.";
     }
 
     async function fetchPackets() {
@@ -244,7 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     allPackets.push(p);
                 });
                 
-                // Memory cap (10,000 packets)
                 if (allPackets.length > 10000) {
                     allPackets.splice(0, allPackets.length - 10000);
                 }
@@ -252,7 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 computeStats();
                 updateTable();
             } else {
-                // Just compute stats to update packet rate
                 computeStats();
             }
         } catch (err) {
@@ -284,7 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
         sorted.forEach(s => {
             const tr = document.createElement('tr');
             tr.className = 'row-enter';
-            
             const duration = Math.max(0, s.last_time - s.start_time).toFixed(2);
             
             tr.innerHTML = `
@@ -319,6 +485,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 elAlerts.textContent = allAlerts.length;
                 updateAlertTable();
+                updateThreatIntelAlertsTable();
+                
+                if (selectedPacket) {
+                    showPacketInspector(selectedPacket);
+                }
             }
         } catch (err) {
             console.error("Failed to fetch alerts:", err);
@@ -327,7 +498,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateAlertTable() {
         alertTable.innerHTML = '';
-        const sorted = allAlerts.slice().sort((a, b) => b.timestamp - a.timestamp);
+        const generalAlerts = allAlerts.filter(a => !a.rule_name.toLowerCase().includes('threatintel'));
+        const sorted = generalAlerts.slice().sort((a, b) => b.timestamp - a.timestamp);
         
         sorted.forEach(a => {
             const tr = document.createElement('tr');
@@ -340,6 +512,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${a.description}</td>
             `;
             alertTable.appendChild(tr);
+        });
+    }
+
+    function updateThreatIntelAlertsTable() {
+        if (!intelAlertsTable) return;
+        
+        const intelAlerts = allAlerts.filter(a => a.rule_name.toLowerCase().includes('threatintel'));
+        
+        if (intelAlerts.length === 0) {
+            intelAlertsTable.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">No threat intelligence hits detected.</td>
+                </tr>
+            `;
+            return;
+        }
+        
+        intelAlertsTable.innerHTML = '';
+        const sorted = intelAlerts.slice().sort((a, b) => b.timestamp - a.timestamp);
+        
+        sorted.forEach(a => {
+            const tr = document.createElement('tr');
+            tr.className = 'row-enter';
+            tr.innerHTML = `
+                <td>${formatTime(a.timestamp)}</td>
+                <td><span class="badge severity-${a.severity.toLowerCase()}">${a.severity}</span></td>
+                <td>${a.rule_name}</td>
+                <td>${a.src_ip}</td>
+                <td>${a.description}</td>
+            `;
+            intelAlertsTable.appendChild(tr);
         });
     }
 
@@ -364,10 +567,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function fetchThreatIntelStatus() {
+        try {
+            const res = await fetch('/api/threat_intel/status');
+            if (!res.ok) return null;
+            const data = await res.json();
+            
+            if (intelIpCount) intelIpCount.textContent = data.num_ips.toLocaleString();
+            if (intelDomainCount) intelDomainCount.textContent = data.num_domains.toLocaleString();
+            
+            if (intelLastUpdated) {
+                if (data.last_updated > 0) {
+                    const date = new Date(data.last_updated * 1000);
+                    intelLastUpdated.textContent = date.toLocaleTimeString() + " " + date.toLocaleDateString();
+                } else {
+                    intelLastUpdated.textContent = "Never (using seed lists)";
+                }
+            }
+            
+            return data;
+        } catch (err) {
+            console.error("Failed to fetch threat intel status:", err);
+            return null;
+        }
+    }
+
+    // Initial Threat Intel status fetch
+    fetchThreatIntelStatus();
+
+    // Polling Loop
     setInterval(() => {
         fetchPackets();
         fetchSessions();
         fetchAlerts();
         fetchStatus();
+        fetchThreatIntelStatus();
     }, updateIntervalMs);
 });
