@@ -90,3 +90,9 @@ class PacketSniffer:
     
     def is_running(self):
         return self._is_capturing
+
+    def get_raw_packets(self):
+        return list(self.raw_packets)
+
+    def clear_raw_packets(self):
+        self.raw_packets.clear()
