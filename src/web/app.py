@@ -34,6 +34,18 @@ def get_status():
         "anomaly_engine": anomaly_engine.get_status()
     })
 
+@app.route('/api/threat_intel/status')
+def get_threat_intel_status():
+    from core.threat_intel import threat_intel
+    return jsonify(threat_intel.get_status())
+
+@app.route('/api/threat_intel/update', methods=['POST'])
+def update_threat_intel():
+    from core.threat_intel import threat_intel
+    started = threat_intel.update_feeds_async()
+    return jsonify({"status": "started" if started else "already_running"})
+
+
 @app.route('/api/clear', methods=['POST'])
 def clear_packets():
     streamer.clear()
