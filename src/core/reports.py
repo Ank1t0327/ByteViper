@@ -143,11 +143,69 @@ def generate_pdf_report():
         textColor=colors.HexColor('#0f172a')
     )
     
+    # Fetch data from DB
+    packets = db_manager.get_packets(limit=2000)
+    alerts = db_manager.get_alerts(limit=2000)
+    sessions = db_manager.get_sessions(limit=2000)
+
+    total_packets = len(packets)
+    total_alerts = len(alerts)
+    total_sessions = len(sessions)
+
+    severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    for a in alerts:
+        sev = a.get("severity", "MEDIUM").upper()
+        if sev in severity_counts:
+            severity_counts[sev] += 1
+
     story = []
     
+    # Title & Metadata
     story.append(Paragraph("ByteViper NDS Forensic Report", title_style))
-    story.append(Paragraph(f"Generated on {time.ctime()}", subtitle_style))
-    story.append(Paragraph("This is a placeholder for the forensic report content.", body_style))
+    story.append(Paragraph(f"Generated on <b>{time.ctime()}</b> | Target Network Monitoring Session", subtitle_style))
+    story.append(Spacer(1, 10))
+
+    # Executive Summary Section
+    story.append(Paragraph("1. Executive Summary", h1_style))
+    exec_summary_text = (
+        "This automated forensic report captures security posture assessment metrics and live network incident "
+        "timelines recorded by the ByteViper Network Detection System. The engine conducts deep packet "
+        "inspection (DPI) on layer-7 payloads to detect vulnerabilities, protocol non-compliance, credential leaks, "
+        "and command-and-control (C2) actions. Over the capture interval, network headers and payloads were "
+        "correlated against real-time threat intelligence feeds."
+    )
+    story.append(Paragraph(exec_summary_text, body_style))
+    story.append(Spacer(1, 15))
+
+    # Stats Table
+    stats_data = [
+        [
+            Paragraph("<b>Total Packets Captured:</b>", body_style),
+            Paragraph(str(total_packets), body_style),
+            Paragraph("<b>Total Flow Sessions:</b>", body_style),
+            Paragraph(str(total_sessions), body_style)
+        ],
+        [
+            Paragraph("<b>Total Security Alerts:</b>", body_style),
+            Paragraph(f"<font color='red'><b>{total_alerts}</b></font>", body_style),
+            Paragraph("<b>Critical / High Alerts:</b>", body_style),
+            Paragraph(f"<b>{severity_counts['CRITICAL'] + severity_counts['HIGH']}</b>", body_style)
+        ]
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[2.0*inch, 1.25*inch, 2.0*inch, 1.25*inch])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#f8fafc')),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor('#0f172a')),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#e2e8f0')),
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#cbd5e1')),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(stats_table)
+    story.append(Spacer(1, 20))
     
     def add_header_footer(canvas, doc):
         canvas.saveState()
