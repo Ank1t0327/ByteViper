@@ -3,6 +3,7 @@ import time
 from collections import deque
 from scapy.all import AsyncSniffer, get_if_list, get_if_hwaddr, conf
 from core.parser import PacketParser
+from web.streamer import streamer
 
 class PacketSniffer:
     def __init__(self, interface=None, max_history=2000):
@@ -32,6 +33,7 @@ class PacketSniffer:
         """Callback function called for each captured packet."""
         self.packet_count += 1
         self.raw_packets.append(packet)
+        streamer.add_raw_packet(packet)
         try:
             parsed_data = self.parser.parse(packet)
             parsed_data['timestamp'] = float(packet.time)
