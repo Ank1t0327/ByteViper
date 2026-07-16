@@ -1,6 +1,7 @@
 import json
 import csv
 import io
+import os
 import time
 from core.db import db_manager
 
@@ -48,3 +49,25 @@ def generate_packets_csv():
             p.get("summary")
         ])
     return output.getvalue()
+
+def generate_pcap_report():
+    """Generates a raw PCAP byte stream of captured packets."""
+    from web.streamer import streamer
+    from scapy.all import wrpcap
+    import tempfile
+    
+    raw_packets = streamer.get_raw_packets()
+    
+    # Write to a temp file and read back
+    with tempfile.NamedTemporaryFile(suffix=".pcap", delete=False) as tmp:
+        tmp_name = tmp.name
+        
+    try:
+        wrpcap(tmp_name, raw_packets)
+        with open(tmp_name, "rb") as f:
+            pcap_bytes = f.read()
+    finally:
+        if os.path.exists(tmp_name):
+            os.remove(tmp_name)
+            
+    return pcap_bytes
