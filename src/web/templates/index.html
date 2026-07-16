@@ -87,26 +87,71 @@
             <button class="tab-btn active" data-tab="tab-packets">Live Feed</button>
             <button class="tab-btn" data-tab="tab-sessions">Flow Sessions</button>
             <button class="tab-btn" data-tab="tab-alerts">Security Alerts</button>
+            <button class="tab-btn" data-tab="tab-threat-intel">Threat Intel</button>
         </div>
 
-        <section class="table-section glass-panel tab-content active" id="tab-packets">
-            <div class="table-container">
-                <table id="packet-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Time</th>
-                            <th>Source</th>
-                            <th>Destination</th>
-                            <th>Protocol</th>
-                            <th>Size</th>
-                            <th>Info</th>
-                        </tr>
-                    </thead>
-                    <tbody id="packet-tbody">
-                        <!-- Rows dynamically populated -->
-                    </tbody>
-                </table>
+        <section class="tab-content active" id="tab-packets">
+            <div class="split-layout">
+                <div class="left-panel table-section glass-panel">
+                    <div class="table-container">
+                        <table id="packet-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Time</th>
+                                    <th>Source</th>
+                                    <th>Destination</th>
+                                    <th>Protocol</th>
+                                    <th>Size</th>
+                                    <th>Info</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packet-tbody">
+                                <!-- Rows dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="right-panel glass-panel" id="packet-inspector">
+                    <div class="inspector-placeholder" id="inspector-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="18" x="3" y="3" rx="2"/>
+                            <path d="M15 3v18"/>
+                            <path d="m8 9 3 3-3 3"/>
+                        </svg>
+                        <p>Select a packet from the feed to inspect its layers and payload.</p>
+                    </div>
+                    <div class="inspector-content hidden" id="inspector-content">
+                        <div class="inspector-header">
+                            <h3>Packet Details <span class="badge tcp" id="inspect-proto">TCP</span></h3>
+                            <span class="inspect-time" id="inspect-time">00:00:00.000</span>
+                        </div>
+                        
+                        <div class="inspect-dpi-alerts hidden" id="inspect-dpi-alerts">
+                            <!-- Populated with alerts -->
+                        </div>
+
+                        <div class="inspector-section">
+                            <h4>Protocol Layers</h4>
+                            <div class="layer-tree" id="inspect-layers">
+                                <!-- Generated list of layers -->
+                            </div>
+                        </div>
+
+                        <div class="inspector-section">
+                            <div class="payload-tabs">
+                                <button class="payload-tab-btn active" data-ptab="payload-hex">Hex Dump</button>
+                                <button class="payload-tab-btn" data-ptab="payload-text">Decoded UTF-8</button>
+                            </div>
+                            <div class="payload-tab-content active" id="payload-hex">
+                                <pre class="hex-dump" id="inspect-hexdump"></pre>
+                            </div>
+                            <div class="payload-tab-content" id="payload-text">
+                                <pre class="decoded-text" id="inspect-decoded"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -147,6 +192,78 @@
                         <!-- Rows dynamically populated -->
                     </tbody>
                 </table>
+            </div>
+        </section>
+
+        <section class="table-section glass-panel tab-content" id="tab-threat-intel">
+            <div class="threat-intel-grid">
+                <div class="intel-card">
+                    <h3>Threat Intel Status</h3>
+                    <div class="intel-stats-box">
+                        <div class="intel-stat">
+                            <div class="intel-label">IP Indicators</div>
+                            <div class="intel-val" id="intel-ip-count">0</div>
+                        </div>
+                        <div class="intel-stat">
+                            <div class="intel-label">Domain Indicators</div>
+                            <div class="intel-val" id="intel-domain-count">0</div>
+                        </div>
+                        <div class="intel-stat">
+                            <div class="intel-label">Last Updated</div>
+                            <div class="intel-val-small" id="intel-last-updated">Never</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="btn-update-intel" style="margin-top: 1rem; width: 100%;">Update Feeds</button>
+                </div>
+                <div class="intel-card">
+                    <h3>Configured Intelligence Sources</h3>
+                    <ul class="feed-list">
+                        <li>
+                            <div class="feed-info">
+                                <span class="feed-name">Feodo Tracker (IP Blocklist)</span>
+                                <span class="feed-desc">Active IP addresses associated with malware command and control (C2).</span>
+                            </div>
+                            <span class="badge default">abuse.ch</span>
+                        </li>
+                        <li>
+                            <div class="feed-info">
+                                <span class="feed-name">URLhaus Hostfile (Domain Blocklist)</span>
+                                <span class="feed-desc">Active domain names distributing malware payloads.</span>
+                            </div>
+                            <span class="badge default">abuse.ch</span>
+                        </li>
+                        <li>
+                            <div class="feed-info">
+                                <span class="feed-name">Offline Seed Lists</span>
+                                <span class="feed-desc">Pre-defined default indicators used when connection fails.</span>
+                            </div>
+                            <span class="badge default">Local Cache</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="intel-alerts-section" style="margin-top: 2rem;">
+                <h3 style="margin-bottom: 1rem; font-family: 'Outfit', sans-serif;">Recent Threat Intel Hits</h3>
+                <div class="table-container">
+                    <table id="intel-alerts-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Severity</th>
+                                <th>Rule</th>
+                                <th>Source IP</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody id="intel-alerts-tbody">
+                            <!-- Threat Intel Alerts populated dynamically -->
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-secondary);">No threat intelligence hits detected.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
     </div>
