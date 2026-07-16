@@ -71,3 +71,96 @@ def generate_pcap_report():
             os.remove(tmp_name)
             
     return pcap_bytes
+
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+
+def generate_pdf_report():
+    """Generates a professional forensic PDF report of captured traffic and alerts."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=54,
+        leftMargin=54,
+        topMargin=54,
+        bottomMargin=54
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    # Custom Styles for Premium Look
+    title_style = ParagraphStyle(
+        'DocTitle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=24,
+        leading=28,
+        textColor=colors.HexColor('#0f172a'),
+        spaceAfter=15
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'DocSubtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor('#475569'),
+        spaceAfter=25
+    )
+
+    h1_style = ParagraphStyle(
+        'SectionH1',
+        parent=styles['Heading2'],
+        fontName='Helvetica-Bold',
+        fontSize=14,
+        leading=18,
+        textColor=colors.HexColor('#0f172a'),
+        spaceBefore=15,
+        spaceAfter=10,
+        keepWithNext=True
+    )
+    
+    body_style = ParagraphStyle(
+        'BodyDark',
+        parent=styles['BodyText'],
+        fontName='Helvetica',
+        fontSize=9.5,
+        leading=13.5,
+        textColor=colors.HexColor('#1e293b')
+    )
+
+    code_style = ParagraphStyle(
+        'CodeStyle',
+        parent=styles['CodeText'],
+        fontName='Courier',
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor('#0f172a')
+    )
+    
+    story = []
+    
+    story.append(Paragraph("ByteViper NDS Forensic Report", title_style))
+    story.append(Paragraph(f"Generated on {time.ctime()}", subtitle_style))
+    story.append(Paragraph("This is a placeholder for the forensic report content.", body_style))
+    
+    def add_header_footer(canvas, doc):
+        canvas.saveState()
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColor(colors.HexColor('#64748b'))
+        canvas.drawString(54, 36, "ByteViper Network Detection System | Forensic Report")
+        canvas.drawRightString(doc.pagesize[0] - 54, 36, f"Page {doc.page}")
+        canvas.setStrokeColor(colors.HexColor('#cbd5e1'))
+        canvas.setLineWidth(0.5)
+        canvas.line(54, doc.pagesize[1] - 40, doc.pagesize[0] - 54, doc.pagesize[1] - 40)
+        canvas.drawString(54, doc.pagesize[1] - 35, "CONFIDENTIAL - CYBERSECURITY EVIDENCE")
+        canvas.restoreState()
+
+    doc.build(story, onFirstPage=add_header_footer, onLaterPages=add_header_footer)
+    buffer.seek(0)
+    return buffer.getvalue()
