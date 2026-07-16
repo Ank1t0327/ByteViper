@@ -135,5 +135,40 @@ class DatabaseManager:
             """, (protocol, state, endpoint_a, endpoint_b, packet_count, total_bytes, start_time, last_time))
             conn.commit()
 
+    def get_packets(self, limit=1000):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM packets ORDER BY timestamp DESC LIMIT ?", (limit,))
+            rows = cursor.fetchall()
+            packets = []
+            for row in rows:
+                p = dict(row)
+                try:
+                    p["layers"] = json.loads(p["layers_json"])
+                except Exception:
+                    p["layers"] = []
+                packets.append(p)
+            return packets
+
+    def get_alerts(self, limit=1000):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM alerts ORDER BY timestamp DESC LIMIT ?", (limit,))
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_sessions(self, limit=1000):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM sessions ORDER BY last_time DESC LIMIT ?", (limit,))
+            return [dict(row) for row in cursor.fetchall()]
+
+    def clear_all(self):
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM packets")
+            cursor.execute("DELETE FROM alerts")
+            cursor.execute("DELETE FROM sessions")
+            conn.commit()
+
 # Global database manager instance
 db_manager = DatabaseManager()
