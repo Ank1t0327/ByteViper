@@ -65,4 +65,4 @@ This project is built in iterative stages to add real capabilities step-by-step:
 \n## Stage 3: Live Dashboard\nRun `dashboard` command in the CLI to launch the live web dashboard.
 \n## Stage 4: Session Tracking\nThe engine now tracks full 5-tuple flows and performs basic TCP state analysis.
 \n## Stage 5: Rule-Based Intrusion Detection\nA modular IDS engine detects Port Scans, SYN Floods, Malicious IPs, and DNS Tunneling with real-time alerting.
-\n## Stage 6: Anomaly Detection Engine\nA statistical learning engine dynamically profiles normal traffic behavior and uses Z-Score analysis to identify bandwidth and packet rate anomalies.
+\n## Stage 6: Anomaly Detection Engine\nA statistical learning engine dynamically profiles normal traffic behavior and uses Z-Score analysis to identify bandwidth and packet rate anomalies
