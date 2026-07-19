@@ -100,5 +100,4 @@ class SessionTracker:
         with self.lock:
             return list(self.sessions.values())
 
-# Global session tracker instance
 session_tracker = SessionTracker()
