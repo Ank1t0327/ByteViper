@@ -133,5 +133,4 @@ class AnomalyEngine:
                 "mean_packets": self.mean_packets
             }
 
-# Global anomaly engine instance
 anomaly_engine = AnomalyEngine(learning_period=30)
