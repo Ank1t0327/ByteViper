@@ -7,7 +7,7 @@ class Alert:
     def __init__(self, rule_name, severity, description, src_ip):
         self.timestamp = time.time()
         self.rule_name = rule_name
-        self.severity = severity # 'INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+        self.severity = severity 
         self.description = description
         self.src_ip = src_ip
         
