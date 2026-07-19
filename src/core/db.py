@@ -170,5 +170,4 @@ class DatabaseManager:
             cursor.execute("DELETE FROM sessions")
             conn.commit()
 
-# Global database manager instance
 db_manager = DatabaseManager()
