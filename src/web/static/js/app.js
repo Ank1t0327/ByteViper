@@ -49,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const elAlerts = document.getElementById('stat-alerts');
     const elEngine = document.getElementById('stat-engine');
     const engineCard = document.getElementById('engine-status-card');
+    const elTi = document.getElementById('stat-ti');
+    const tiCard = document.getElementById('ti-status-card');
     const statusIndicator = document.querySelector('.status-indicator');
     const statusText = document.getElementById('status-text');
     
@@ -560,6 +562,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     elEngine.innerHTML = `Active <span style="font-size: 0.8rem; color: var(--text-secondary);">(Baseline)</span>`;
                     engineCard.style.borderTop = "2px solid #3b82f6";
+                }
+            }
+            
+            if (data.threat_intel) {
+                if (data.threat_intel.is_updating) {
+                    elTi.innerHTML = `Updating... <span style="font-size: 0.8rem; color: var(--text-secondary);">(from feeds)</span>`;
+                    tiCard.style.borderTop = "2px solid var(--highlight)";
+                } else {
+                    const total = data.threat_intel.num_ips + data.threat_intel.num_domains;
+                    elTi.innerHTML = `${total.toLocaleString()} <span style="font-size: 0.8rem; color: var(--text-secondary);">IOCs Loaded</span>`;
+                    tiCard.style.borderTop = "2px solid #ef4444";
                 }
             }
         } catch (err) {
