@@ -30,8 +30,10 @@ def get_alerts():
 @app.route('/api/status')
 def get_status():
     from core.anomaly import anomaly_engine
+    from core.threat_intel import threat_intel
     return jsonify({
-        "anomaly_engine": anomaly_engine.get_status()
+        "anomaly_engine": anomaly_engine.get_status(),
+        "threat_intel": threat_intel.get_status()
     })
 
 @app.route('/api/threat_intel/status')
