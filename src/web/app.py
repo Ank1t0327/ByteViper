@@ -3,6 +3,11 @@ import threading
 from flask import Flask, render_template, jsonify, request
 from web.streamer import streamer
 from core.session import session_tracker
+import logging
+
+# Disable Flask/Werkzeug default request logging to prevent terminal spam
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
