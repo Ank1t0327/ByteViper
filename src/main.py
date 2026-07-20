@@ -5,6 +5,7 @@ from core.sniffer import PacketSniffer
 from core.session import session_tracker
 from core.rules import rule_engine
 from core.anomaly import anomaly_engine
+from core.threat_intel import threat_intel
 from web.app import start_web_server
 from web.streamer import streamer
 
@@ -26,6 +27,10 @@ def print_banner():
 
 def main():
     print_banner()
+    
+    print("[*] Initializing Threat Intelligence feeds in background...")
+    threat_intel.update_feeds_async()
+    
     sniffer = PacketSniffer()
 
     print("[*] Detecting available network interfaces...")
