@@ -2,7 +2,7 @@ import os
 import threading
 from flask import Flask, render_template, jsonify, request
 from web.streamer import streamer
-from core.session import session_tracker
+from modules.session import session_tracker
 import logging
 
 # Disable Flask/Werkzeug default request logging to prevent terminal spam
@@ -34,8 +34,8 @@ def get_alerts():
 
 @app.route('/api/status')
 def get_status():
-    from core.anomaly import anomaly_engine
-    from core.threat_intel import threat_intel
+    from modules.anomaly import anomaly_engine
+    from feeds.updater import threat_intel
     return jsonify({
         "anomaly_engine": anomaly_engine.get_status(),
         "threat_intel": threat_intel.get_status()
@@ -43,12 +43,12 @@ def get_status():
 
 @app.route('/api/threat_intel/status')
 def get_threat_intel_status():
-    from core.threat_intel import threat_intel
+    from feeds.updater import threat_intel
     return jsonify(threat_intel.get_status())
 
 @app.route('/api/threat_intel/update', methods=['POST'])
 def update_threat_intel():
-    from core.threat_intel import threat_intel
+    from feeds.updater import threat_intel
     started = threat_intel.update_feeds_async()
     return jsonify({"status": "started" if started else "already_running"})
 

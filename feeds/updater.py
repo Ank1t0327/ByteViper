@@ -1,35 +1,11 @@
 import os
 import json
 import time
-import urllib.request
 import threading
-import re
 import shutil
-
-# Default seed lists in case of no network / first run
-DEFAULT_MALICIOUS_IPS = {
-    "185.15.59.224",
-    "198.51.100.42",
-    "203.0.113.7",
-    "192.185.10.15",
-    "91.219.28.2",
-    "45.143.203.95"
-}
-
-DEFAULT_MALICIOUS_DOMAINS = {
-    "malware-c2.net",
-    "bad-domain.ru",
-    "phishing-scam.com",
-    "dast.threatintel.org",
-    "c2server.xyz",
-    "super-malicious-domain.com"
-}
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-CACHE_DIR = os.path.join(BASE_DIR, "cache")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-CACHE_FILE = os.path.join(CACHE_DIR, "threat_intel_cache.json")
-STARTER_CACHE_FILE = os.path.join(DATA_DIR, "starter_cache.json")
+from config.settings import CACHE_DIR, CACHE_FILE, STARTER_CACHE_FILE, FEODO_URL, URLHAUS_URL, DEFAULT_MALICIOUS_IPS, DEFAULT_MALICIOUS_DOMAINS
+from feeds.downloader import download_text_feed
+from feeds.parser import parse_feodo_ips, parse_urlhaus_domains
 
 class ThreatIntelEngine:
     def __init__(self):
@@ -39,17 +15,14 @@ class ThreatIntelEngine:
         self.is_updating = False
         self.lock = threading.Lock()
         
-        # Ensure cache dir exists
         os.makedirs(CACHE_DIR, exist_ok=True)
         
-        # Check if cache file is present, if not copy starter cache
         if not os.path.exists(CACHE_FILE):
             if os.path.exists(STARTER_CACHE_FILE):
                 shutil.copy(STARTER_CACHE_FILE, CACHE_FILE)
             else:
                 self.save_cache()
                 
-        # Load from cache
         self.load_cache()
 
     def load_cache(self):
@@ -95,12 +68,10 @@ class ThreatIntelEngine:
     def check_domain(self, domain: str) -> bool:
         if not domain:
             return False
-        # Normalize domain (lowercase, remove trailing dot)
         domain = domain.lower().strip().rstrip(".")
         with self.lock:
             if domain in self.malicious_domains:
                 return True
-            # Check subdomains (e.g. mal.c2server.xyz matches c2server.xyz)
             for d in self.malicious_domains:
                 if domain.endswith("." + d):
                     return True
@@ -116,55 +87,18 @@ class ThreatIntelEngine:
             }
 
     def update_feeds(self):
-        """Perform the actual blocking update request."""
         with self.lock:
             if self.is_updating:
                 return
             self.is_updating = True
 
         try:
-            new_ips = set()
-            new_domains = set()
+            feodo_content = download_text_feed(FEODO_URL)
+            new_ips = parse_feodo_ips(feodo_content)
+            
+            urlhaus_content = download_text_feed(URLHAUS_URL)
+            new_domains = parse_urlhaus_domains(urlhaus_content)
 
-            # 1. Fetch IP blocklist from Feodo Tracker
-            try:
-                req = urllib.request.Request(
-                    "https://feodotracker.abuse.ch/downloads/ipblocklist.txt",
-                    headers={"User-Agent": "ByteViper-NDS/1.0"}
-                )
-                with urllib.request.urlopen(req, timeout=5) as response:
-                    content = response.read().decode("utf-8", errors="ignore")
-                    for line in content.splitlines():
-                        line = line.strip()
-                        if line and not line.startswith("#"):
-                            match = re.search(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", line)
-                            if match:
-                                new_ips.add(match.group(0))
-            except Exception:
-                # If network fails, keep existing/fallback IPs
-                pass
-
-            # 2. Fetch Domain blocklist from URLhaus hostfile
-            try:
-                req = urllib.request.Request(
-                    "https://urlhaus.abuse.ch/downloads/hostfile/",
-                    headers={"User-Agent": "ByteViper-NDS/1.0"}
-                )
-                with urllib.request.urlopen(req, timeout=5) as response:
-                    content = response.read().decode("utf-8", errors="ignore")
-                    for line in content.splitlines():
-                        line = line.strip()
-                        if line and not line.startswith("#"):
-                            parts = line.split()
-                            if len(parts) >= 2 and (parts[0] == "127.0.0.1" or parts[0] == "0.0.0.0"):
-                                domain = parts[1].strip().lower()
-                                if domain and domain != "localhost":
-                                    new_domains.add(domain)
-            except Exception:
-                # If network fails, keep existing/fallback domains
-                pass
-
-            # Update state if we got new feeds, otherwise merge/fallback to defaults
             with self.lock:
                 if new_ips:
                     self.malicious_ips = new_ips.union(DEFAULT_MALICIOUS_IPS)
@@ -182,7 +116,6 @@ class ThreatIntelEngine:
         if self.is_updating:
             return False
             
-        # 24-hour expiry check
         if (time.time() - self.last_updated) < 86400:
             return False
             

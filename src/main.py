@@ -1,11 +1,14 @@
 import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import time
 import threading
-from core.sniffer import PacketSniffer
-from core.session import session_tracker
-from core.rules import rule_engine
-from core.anomaly import anomaly_engine
-from core.threat_intel import threat_intel
+from modules.sniffer import PacketSniffer
+from modules.session import session_tracker
+from modules.rules import rule_engine
+from modules.anomaly import anomaly_engine
+from feeds.updater import threat_intel
 from web.app import start_web_server
 from web.streamer import streamer
 

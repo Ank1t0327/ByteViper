@@ -2,7 +2,7 @@ import threading
 import time
 from collections import deque
 from scapy.all import AsyncSniffer, get_if_list, get_if_hwaddr, conf
-from core.parser import PacketParser
+from modules.parser import PacketParser
 from web.streamer import streamer
 
 class PacketSniffer:

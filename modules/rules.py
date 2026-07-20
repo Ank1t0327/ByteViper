@@ -1,7 +1,7 @@
 import time
 import re
 import base64
-from core.threat_intel import threat_intel
+from feeds.updater import threat_intel
 
 class Alert:
     def __init__(self, rule_name, severity, description, src_ip):

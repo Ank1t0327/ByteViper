@@ -1,7 +1,7 @@
 import time
 import math
 import threading
-from core.rules import Alert
+from modules.rules import Alert
 
 class AnomalyEngine:
     def __init__(self, learning_period=30, deviation_threshold=3.0):

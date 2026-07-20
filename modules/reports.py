@@ -3,7 +3,7 @@ import csv
 import io
 import os
 import time
-from core.db import db_manager
+from modules.db import db_manager
 
 def generate_json_report():
     """Generates a complete JSON dump of packets, alerts, and sessions."""
