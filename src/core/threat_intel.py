@@ -4,6 +4,7 @@ import time
 import urllib.request
 import threading
 import re
+import shutil
 
 # Default seed lists in case of no network / first run
 DEFAULT_MALICIOUS_IPS = {
@@ -24,7 +25,11 @@ DEFAULT_MALICIOUS_DOMAINS = {
     "super-malicious-domain.com"
 }
 
-CACHE_FILE = os.path.join(os.path.dirname(__file__), "threat_intel_cache.json")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+CACHE_DIR = os.path.join(BASE_DIR, "cache")
+DATA_DIR = os.path.join(BASE_DIR, "data")
+CACHE_FILE = os.path.join(CACHE_DIR, "threat_intel_cache.json")
+STARTER_CACHE_FILE = os.path.join(DATA_DIR, "starter_cache.json")
 
 class ThreatIntelEngine:
     def __init__(self):
@@ -34,7 +39,17 @@ class ThreatIntelEngine:
         self.is_updating = False
         self.lock = threading.Lock()
         
-        # Load from cache if it exists
+        # Ensure cache dir exists
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        
+        # Check if cache file is present, if not copy starter cache
+        if not os.path.exists(CACHE_FILE):
+            if os.path.exists(STARTER_CACHE_FILE):
+                shutil.copy(STARTER_CACHE_FILE, CACHE_FILE)
+            else:
+                self.save_cache()
+                
+        # Load from cache
         self.load_cache()
 
     def load_cache(self):
@@ -42,17 +57,28 @@ class ThreatIntelEngine:
             try:
                 with open(CACHE_FILE, "r") as f:
                     data = json.load(f)
-                    self.malicious_ips = set(data.get("ips", list(DEFAULT_MALICIOUS_IPS)))
-                    self.malicious_domains = set(data.get("domains", list(DEFAULT_MALICIOUS_DOMAINS)))
+                    
+                    ips = data.get("ips", [])
+                    if ips:
+                        self.malicious_ips = set(ips)
+                    else:
+                        self.malicious_ips = set(DEFAULT_MALICIOUS_IPS)
+                        
+                    domains = data.get("domains", [])
+                    if domains:
+                        self.malicious_domains = set(domains)
+                    else:
+                        self.malicious_domains = set(DEFAULT_MALICIOUS_DOMAINS)
+                        
                     self.last_updated = data.get("last_updated", 0.0)
             except Exception:
-                # Fallback to defaults
                 pass
 
     def save_cache(self):
         try:
             with open(CACHE_FILE, "w") as f:
                 json.dump({
+                    "version": "1.0",
                     "ips": list(self.malicious_ips),
                     "domains": list(self.malicious_domains),
                     "last_updated": self.last_updated
@@ -155,6 +181,11 @@ class ThreatIntelEngine:
     def update_feeds_async(self) -> bool:
         if self.is_updating:
             return False
+            
+        # 24-hour expiry check
+        if (time.time() - self.last_updated) < 86400:
+            return False
+            
         t = threading.Thread(target=self.update_feeds, daemon=True)
         t.start()
         return True
